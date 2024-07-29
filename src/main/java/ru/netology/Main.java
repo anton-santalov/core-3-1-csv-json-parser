@@ -1,17 +1,58 @@
 package ru.netology;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+import com.opencsv.CSVReader;
+import com.opencsv.bean.ColumnPositionMappingStrategy;
+import com.opencsv.bean.CsvToBean;
+import com.opencsv.bean.CsvToBeanBuilder;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.List;
+
 public class Main {
     public static void main(String[] args) {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        System.out.printf("Hello and welcome!");
+        String[] columnMapping = {"id", "firstName", "lastName", "country", "age"};
+        String fileName = "data.csv";
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
+        List<Employee> list = parseCSV(columnMapping, fileName);
+        String json = listToJson(list);
+
+        writeString(json, "data.json");
+    }
+
+    private static List<Employee> parseCSV(String[] columnMapping, String fileName) {
+        try (CSVReader csvReader = new CSVReader(new FileReader(fileName))) {
+            ColumnPositionMappingStrategy<Employee> strategy = new ColumnPositionMappingStrategy<>();
+            strategy.setType(Employee.class);
+            strategy.setColumnMapping(columnMapping);
+
+            CsvToBean<Employee> csvToBean = new CsvToBeanBuilder<Employee>(csvReader)
+                .withMappingStrategy(strategy)
+                .build();
+
+            return csvToBean.parse();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private static String listToJson(List<Employee> list) {
+        GsonBuilder builder = new GsonBuilder();
+        Gson gson = builder.setPrettyPrinting().create();
+        Type listType = new TypeToken<List<Employee>>() {}.getType();
+        return gson.toJson(list, listType);
+    }
+
+    private static void writeString(String json, String fileName) {
+        try (FileWriter writer = new FileWriter(fileName)) {
+            writer.write(json);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
